@@ -86,16 +86,44 @@ If your prompts live elsewhere, set `REPO_PROMPTS_DIR=/path/to/prompts` before r
 
 ## Requirements & Troubleshooting
 
-- Bash 3.2+ (macOS) / 4+, zsh; fish supported for PATH/alias (basic).
-- macOS/Linux; Windows via WSL or Git Bash.
-- `npm` optional (only for `cdx update`). If `codex` is not on PATH after update, check `npm prefix -g` and your shell rc file.
-- If `cdx` is not found after install, ensure your rc file contains:
+Base requirements
+- Bash 3.2+ (macOS) / 4+ or zsh; fish supported for PATH + `cx` helper.
+- macOS or Linux; Windows via WSL or Git Bash.
+- Core POSIX tools: `awk`, `sed`, `find`, `install`.
+
+Recommended (optional)
+- ripgrep (`rg`) • fd • jq — used by some helpers; cdx degrades gracefully if absent.
+- bat — only needed if you choose to alias `cat` to `bat` in your shell.
+  - Note for Debian/Ubuntu: the package installs the binary as `batcat`. Either alias `bat=batcat` or install from another source.
+
+Install recommended tools
+- macOS (Homebrew):
+  ```bash
+  brew install ripgrep fd jq bat
+  ```
+- Ubuntu/Debian:
+  ```bash
+  sudo apt-get update
+  sudo apt-get install -y ripgrep fd-find jq bat
+  # Make fd accessible as `fd` instead of `fdfind` (optional):
+  mkdir -p ~/.local/bin && ln -sf "$(command -v fdfind)" ~/.local/bin/fd && export PATH="$HOME/.local/bin:$PATH"
+  # bat may be installed as `batcat`:
+  echo "alias bat=batcat" >> ~/.bashrc   # or ~/.zshrc
+  ```
+- Other distros: use your package manager, or install from upstream releases.
+
+Optional (Codex CLI updates)
+- `npm` is only needed for `cdx update`. If `codex` is not on PATH after update, check `npm prefix -g` and your shell rc file.
+
+If `cdx` is not found after install
+- Ensure your rc file contains:
   ```bash
   export CODEX_HOME="$HOME/.codex"
   export PATH="$CODEX_HOME/bin:$PATH"
   source "$CODEX_HOME/lib/codex-init.sh"
   ```
   and start a new shell or `source ~/.bashrc` / `source ~/.zshrc`.
+
 
 ## Uninstall
 

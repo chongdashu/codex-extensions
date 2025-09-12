@@ -196,8 +196,8 @@ append_fish_block() {
     warn "$cfg is not writable; please add fish init manually"
     return 0
   fi
-  # Minimal PATH + env + alias; cdx wrapper is an executable so sourcing bash is unnecessary
-  local block="# >>> codex-cli initialize >>>\nset -gx CODEX_HOME \"$home_dir\"\nset -gx PATH \"$home_dir/bin\" $PATH\nfunctions -q cx; or alias cx 'cdx'\n# <<< codex-cli initialize <<<"
+  # Minimal PATH + env + cx helper; wrapper is executable, no bash source needed
+  local block="# >>> codex-cli initialize >>>\nset -gx CODEX_HOME \"$home_dir\"\nset -gx PATH \"$home_dir/bin\" $PATH\nfunctions -q cx; or function cx\n  cdx $argv\nend\n# <<< codex-cli initialize <<<"
   if grep -Fq "$home_dir/bin" "$cfg" 2>/dev/null; then
     info "Fish init block already present in $cfg"
     return 0
@@ -207,13 +207,32 @@ append_fish_block() {
 }
 
 check_dependencies() {
-  local -a req=(bash awk find install)
+  local -a req=(awk find install sed)
   local missing=()
   for b in "${req[@]}"; do
     command -v "$b" >/dev/null 2>&1 || missing+=("$b")
   done
   if (( ${#missing[@]} > 0 )); then
-    warn "Missing tools: ${missing[*]} (installer may fail)"
+    warn "Missing core tools: ${missing[*]} (installer may fail)"
+  fi
+  # Recommended tools
+  local -a rec=(rg fd jq)
+  local rec_missing=()
+  for b in "${rec[@]}"; do
+    command -v "$b" >/dev/null 2>&1 || rec_missing+=("$b")
+  done
+  if (( ${#rec_missing[@]} > 0 )); then
+    info "Recommended (optional) tools missing: ${rec_missing[*]}"
+  fi
+  # If user aliased cat->bat but 'bat' not installed, mention it
+  if alias cat 2>/dev/null | grep -q "\bbat\b"; then
+    if ! command -v bat >/dev/null 2>&1; then
+      if command -v batcat >/dev/null 2>&1; then
+        info "Detected 'cat' alias to 'bat' but only 'batcat' is installed (Debian/Ubuntu). Consider aliasing bat=batcat."
+      else
+        warn "Detected 'cat' alias to 'bat' but 'bat' is not installed. Install it (e.g., 'brew install bat' on macOS)."
+      fi
+    fi
   fi
   if ! command -v codex >/dev/null 2>&1; then
     info "'codex' binary not found; 'cdx --' pass-through may not work until installed"
@@ -221,7 +240,7 @@ check_dependencies() {
 }
 
 usage() {
-  cat <<EOF
+  \cat <<EOF
 Usage: bash cdx/install.sh [--with-prompts] [--sudo] [--home DIR]
 
 Options:

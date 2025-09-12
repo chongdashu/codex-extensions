@@ -156,9 +156,11 @@ EOF
 cdx() {
   local codebin="${CODEX_BIN}"
   local plugin_dir="${CODEX_PLUGIN_DIR}"
-
+  # Protect against set -u environments by normalizing first arg
+  local first_arg
+  first_arg=${1-}
   # Early handling for version/help to avoid pass-through
-  case "${1-}" in
+  case "$first_arg" in
     -V|--version|version)
       printf 'cdx %s (%s)\n' "$CDX_VERSION" "$CDX_BUILD_DATE"
       return 0 ;;
@@ -168,7 +170,7 @@ cdx() {
   esac
 
   # Force pass-through to codex (ignore subcommand lookup)
-  if [[ "$1" == "--" ]]; then
+  if [[ "$first_arg" == "--" ]]; then
     # Optional update check on pass-through invocations
     _cdx_maybe_check_updates
     shift
@@ -181,7 +183,7 @@ cdx() {
   fi
 
   # Help and utilities
-  case "$1" in
+  case "$first_arg" in
     plugins)
       _cdx_plugins_cmd
       return 0;;
@@ -194,8 +196,8 @@ cdx() {
   esac
 
   # If first arg is non-option, treat as potential subcommand
-  if [[ $# -ge 1 && "$1" != -* ]]; then
-    local sub="$1"; shift
+  if (( $# >= 1 )) && [[ ${first_arg} != -* ]]; then
+    local sub="$first_arg"; shift
     case "$sub" in
       raw)
         if ! command -v "$codebin" >/dev/null 2>&1; then

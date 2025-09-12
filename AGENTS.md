@@ -12,7 +12,7 @@ Note: When embedding in another repo, `tools/cdx/**` is the recommended path. Se
 ## Build, Test, and Development Commands
 - Load locally: `source cdx/cdx.sh && cdx help` (defines `cdx` in your shell).
 - Smoke test: `bash cdx/smoke-test.sh` (verifies sourcing, plugins, prompts, update check).
-- Install to shell: `bash cdx/install.sh [--with-prompts]`.
+- Install to shell: `bash cdx/install.sh [--with-prompts] [--sudo]`.
 - Update Codex CLI: `cdx update --check-only` or `cdx update [--sudo]`.
 - Prompts: `cdx prompts list` • `cdx prompts install` • `cdx prompts path`.
 - Profiles: `cdx profiles` or `cdx profiles --quiet`.
@@ -39,4 +39,3 @@ Note: When embedding in another repo, `tools/cdx/**` is the recommended path. Se
 - Cap file reads at ~250 lines; prefer `rg -n -A3 -B3` for context.
 - Use `jq` for JSON parsing.
 - Append the fast-tools prompt (idempotent): `bash cdx/scripts/setup-fast-tools.sh [--install-deps]`.
-

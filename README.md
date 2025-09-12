@@ -21,14 +21,18 @@ As a worked through famliarising myself with the Codex CLI, I found that many of
 
 ## Quick Start
 
-- From this repo (local install):
+- Global install (recommended):
   ```bash
-  # Add cdx to your shell
-  bash cdx/install.sh --with-prompts   # optional: copies prompts
-  # Or for a temporary session
+  # Install globally under ~/.codex and update your shell rc
+  bash cdx/install.sh --with-prompts        # add --sudo to create /usr/local/bin/cdx symlink
+  # Open a new shell or source your rc, then:
+  cdx --version
+  ```
+- Temporary session (no install):
+  ```bash
   source cdx/cdx.sh && cdx help
   ```
-- One‑liner (template for vendored copies):
+- One‑liner (template when vendored as tools/cdx):
   ```bash
   # Replace OWNER/REPO/BRANCH with your values
   bash <(curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/BRANCH/tools/cdx/install.sh) --with-prompts
@@ -82,8 +86,24 @@ If your prompts live elsewhere, set `REPO_PROMPTS_DIR=/path/to/prompts` before r
 
 ## Requirements & Troubleshooting
 
-- Bash 4+, macOS/Linux; Windows via WSL or Git Bash.
+- Bash 3.2+ (macOS) / 4+, zsh; fish supported for PATH/alias (basic).
+- macOS/Linux; Windows via WSL or Git Bash.
 - `npm` optional (only for `cdx update`). If `codex` is not on PATH after update, check `npm prefix -g` and your shell rc file.
+- If `cdx` is not found after install, ensure your rc file contains:
+  ```bash
+  export CODEX_HOME="$HOME/.codex"
+  export PATH="$CODEX_HOME/bin:$PATH"
+  source "$CODEX_HOME/lib/codex-init.sh"
+  ```
+  and start a new shell or `source ~/.bashrc` / `source ~/.zshrc`.
+
+## Uninstall
+
+```bash
+bash cdx/uninstall.sh --remove-symlink --remove-home
+```
+
+This removes the init blocks from `~/.bashrc`, `~/.zshrc`, fish config, an optional `/usr/local/bin/cdx` symlink, and the `~/.codex` install (with `--remove-home`).
 
 ## Contributing
 

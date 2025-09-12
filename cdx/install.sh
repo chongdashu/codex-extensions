@@ -181,6 +181,45 @@ verify_installation() {
   fi
 }
 
+append_fish_block() {
+  local home_dir="$1"
+  local cfg_root="${XDG_CONFIG_HOME:-$HOME/.config}"
+  local cfg="$cfg_root/fish/config.fish"
+  mkdir -p "$(dirname "$cfg")" 2>/dev/null || true
+  if [[ ! -e "$cfg" ]]; then
+    if ! ( : > "$cfg" ) 2>/dev/null; then
+      warn "Cannot create $cfg (permission denied); please add fish init manually"
+      return 0
+    fi
+  fi
+  if [[ ! -w "$cfg" ]]; then
+    warn "$cfg is not writable; please add fish init manually"
+    return 0
+  fi
+  # Minimal PATH + env + alias; cdx wrapper is an executable so sourcing bash is unnecessary
+  local block="# >>> codex-cli initialize >>>\nset -gx CODEX_HOME \"$home_dir\"\nset -gx PATH \"$home_dir/bin\" $PATH\nfunctions -q cx; or alias cx 'cdx'\n# <<< codex-cli initialize <<<"
+  if grep -Fq "$home_dir/bin" "$cfg" 2>/dev/null; then
+    info "Fish init block already present in $cfg"
+    return 0
+  fi
+  printf '\n%s\n' "$block" >>"$cfg"
+  ok "Updated $cfg"
+}
+
+check_dependencies() {
+  local -a req=(bash awk find install)
+  local missing=()
+  for b in "${req[@]}"; do
+    command -v "$b" >/dev/null 2>&1 || missing+=("$b")
+  done
+  if (( ${#missing[@]} > 0 )); then
+    warn "Missing tools: ${missing[*]} (installer may fail)"
+  fi
+  if ! command -v codex >/dev/null 2>&1; then
+    info "'codex' binary not found; 'cdx --' pass-through may not work until installed"
+  fi
+}
+
 usage() {
   cat <<EOF
 Usage: bash cdx/install.sh [--with-prompts] [--sudo] [--home DIR]
@@ -189,6 +228,7 @@ Options:
   --with-prompts   Install prompts from cdx/prompts to \$CODEX_HOME/prompts
   --sudo           Attempt to create /usr/local/bin/cdx symlink (may prompt)
   --home DIR       Install into custom home (default: $DEFAULT_HOME)
+  --verbose        Print debug commands
 
 Behavior:
   - Updates ~/.bashrc and/or ~/.zshrc idempotently with PATH and init sourcing
@@ -202,18 +242,22 @@ main() {
     exit 1
   fi
 
-  local do_prompts="" do_sudo_link="" home_dir="$DEFAULT_HOME"
+  local do_prompts="" do_sudo_link="" home_dir="$DEFAULT_HOME" verbose=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --with-prompts) do_prompts=1 ;;
       --sudo|--with-symlink) do_sudo_link=1 ;;
       --home) shift; home_dir="${1:-}"; [[ -n "$home_dir" ]] || { err "--home requires a directory"; exit 2; } ;;
+      --verbose) verbose=1 ;;
       -h|--help) usage; exit 0 ;;
       *) err "Unknown option: $1"; usage; exit 2 ;;
     esac
     shift || true
   done
 
+  [[ -n "$verbose" ]] && set -x
+
+  check_dependencies
   ensure_dirs "$home_dir"
   install_files "$home_dir"
   write_wrapper "$home_dir"
@@ -231,6 +275,11 @@ main() {
   for rc in "${rcs[@]}"; do
     append_rc_block "$rc" "$home_dir"
   done
+
+  # Fish shell (best-effort)
+  if command -v fish >/dev/null 2>&1; then
+    append_fish_block "$home_dir"
+  fi
 
   [[ -n "$do_sudo_link" ]] && symlink_bin "$home_dir"
 

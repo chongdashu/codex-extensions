@@ -47,7 +47,7 @@ do_install() {
 }
 
 usage() {
-  cat <<EOF
+  \cat <<EOF
 cdx prompts - manage Codex custom prompts (slash menu)
 
 Commands:

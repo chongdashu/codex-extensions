@@ -11,7 +11,7 @@ set -euo pipefail
 #   $CODEX_HOME/config.toml (default: ~/.codex/config.toml)
 
 show_help() {
-  cat <<'EOF'
+  \cat <<'EOF'
 List Codex profiles defined in config.toml.
 
 Usage:

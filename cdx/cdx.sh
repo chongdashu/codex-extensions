@@ -71,8 +71,8 @@ _cdx_plugins_cmd() {
   printf 'Plugins (%s) in %s:\n' "$count" "$plugin_dir"
   while IFS= read -r name; do
     [[ -z "$name" ]] && continue
-    local path="$plugin_dir/codex-$name.sh"
-    printf '  - %s  (%s)\n' "$name" "$path"
+    local plugin_path="$plugin_dir/codex-$name.sh"
+    printf '  - %s  (%s)\n' "$name" "$plugin_path"
   done <<<"$list"
   printf 'Tip: run `cdx <plugin> --help` for plugin usage.\n'
 }
@@ -120,7 +120,7 @@ _cdx_maybe_check_updates() {
 
 _cdx_usage() {
   printf 'cdx %s (%s)\n\n' "$CDX_VERSION" "$CDX_BUILD_DATE"
-  cat <<EOF
+  \cat <<EOF
 Usage:
   cdx [--] [codex-args...]
   cdx --version            -> print cdx version
@@ -156,9 +156,11 @@ EOF
 cdx() {
   local codebin="${CODEX_BIN}"
   local plugin_dir="${CODEX_PLUGIN_DIR}"
-
+  # Protect against set -u environments by normalizing first arg
+  local first_arg
+  first_arg=${1-}
   # Early handling for version/help to avoid pass-through
-  case "${1-}" in
+  case "$first_arg" in
     -V|--version|version)
       printf 'cdx %s (%s)\n' "$CDX_VERSION" "$CDX_BUILD_DATE"
       return 0 ;;
@@ -168,7 +170,7 @@ cdx() {
   esac
 
   # Force pass-through to codex (ignore subcommand lookup)
-  if [[ "$1" == "--" ]]; then
+  if [[ "$first_arg" == "--" ]]; then
     # Optional update check on pass-through invocations
     _cdx_maybe_check_updates
     shift
@@ -181,7 +183,7 @@ cdx() {
   fi
 
   # Help and utilities
-  case "$1" in
+  case "$first_arg" in
     plugins)
       _cdx_plugins_cmd
       return 0;;
@@ -194,8 +196,8 @@ cdx() {
   esac
 
   # If first arg is non-option, treat as potential subcommand
-  if [[ $# -ge 1 && "$1" != -* ]]; then
-    local sub="$1"; shift
+  if (( $# >= 1 )) && [[ ${first_arg} != -* ]]; then
+    local sub="$first_arg"; shift
     case "$sub" in
       raw)
         if ! command -v "$codebin" >/dev/null 2>&1; then
@@ -249,4 +251,40 @@ _cdx_completions_bash() {
 
 if [[ -n "$BASH_VERSION" ]]; then
   complete -F _cdx_completions_bash cdx 2>/dev/null || true
+fi
+
+# Portable overrides for cross-shell compatibility (bash/zsh)
+unset -f _cdx_parse_bool 2>/dev/null || true
+_cdx_parse_bool() {
+  local s="${1-}"
+  s=$(printf '%s' "$s" | tr '[:upper:]' '[:lower:]')
+  case "$s" in
+    1|true|yes|on) return 0;;
+    0|false|no|off|"") return 1;;
+    *) return 1;;
+  esac
+}
+
+unset -f _cdx_maybe_check_updates 2>/dev/null || true
+_cdx_maybe_check_updates() {
+  _cdx_should_check_updates || return 0
+  local plugin="$CODEX_PLUGIN_DIR/codex-update.sh"
+  [[ -f "$plugin" ]] || return 0
+  local flags=(--check-only)
+  local _lc
+  _lc=$(printf '%s' "${CDX_CHECK_UPDATES:-}" | tr '[:upper:]' '[:lower:]')
+  case "$_lc" in
+    info|verbose|always|print|show) : ;; # no --quiet
+    *) flags+=(--quiet) ;;
+  esac
+  bash "$plugin" "${flags[@]}" 2>/dev/null || true
+}
+
+# Adjust CODEX_PLUGIN_DIR if initial detection failed when sourcing relatively under zsh
+if [[ ! -d "${CODEX_PLUGIN_DIR:-}" ]]; then
+  if [[ -d "$PWD/cdx/plugins" ]]; then
+    CODEX_PLUGIN_DIR="$PWD/cdx/plugins"
+  elif [[ -d "$PWD/tools/cdx/plugins" ]]; then
+    CODEX_PLUGIN_DIR="$PWD/tools/cdx/plugins"
+  fi
 fi

@@ -6,7 +6,7 @@ print_usage() {
 Update Codex CLI to the latest (or a specified tag/version).
 
 Usage:
-  cdx update [--sudo] [--tag <dist-tag>] [--version <x.y.z>] [--force] [--dry-run]
+  cdx update [--sudo] [--tag <dist-tag>] [--version <x.y.z>] [--force] [--npm-force] [--dry-run]
   cdx update --check-only [--tag <dist-tag>] [--quiet]
   cdx update -h|--help
 EOF
@@ -24,12 +24,13 @@ version_lt() {
 }
 
 main() {
-  local use_sudo=0 dry_run=0 force=0 tag="" version="" check_only=0 quiet=0
+  local use_sudo=0 dry_run=0 force=0 npm_force=0 tag="" version="" check_only=0 quiet=0
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --sudo) use_sudo=1; shift ;;
       --dry-run) dry_run=1; shift ;;
       --force) force=1; shift ;;
+      --npm-force) npm_force=1; shift ;;
       --check-only) check_only=1; shift ;;
       --quiet) quiet=1; shift ;;
       --tag) tag=${2:-}; shift 2 ;;
@@ -61,8 +62,35 @@ main() {
     echo; echo "Update available: $current_version → $target_version"; read -p "Proceed with update? [Y/n] " -n 1 -r; echo; [[ $REPLY =~ ^[Yy]?$ ]] || { echo "Update cancelled."; exit 0; }
   fi
 
-  local cmd=(npm install -g "$target_spec"); (( use_sudo )) && cmd=(sudo "${cmd[@]}")
-  echo "Running: ${cmd[*]}"; (( dry_run )) && echo "(dry-run) Skipping execution." || "${cmd[@]}"
+  # Preflight: check writeability of target bin
+  local npm_prefix npm_bin codex_bin
+  npm_prefix=$(npm prefix -g 2>/dev/null || echo "")
+  npm_bin=$(npm bin -g 2>/dev/null || echo "")
+  [[ -z "$npm_bin" && -n "$npm_prefix" ]] && npm_bin="$npm_prefix/bin"
+  codex_bin="$npm_bin/codex"
+  if [[ -n "$codex_bin" && -e "$codex_bin" && ! -w "$codex_bin" && $use_sudo -eq 0 ]]; then
+    echo "error: $codex_bin exists and is not writable. Re-run with --sudo, or remove/rename the file." >&2
+    echo "hint: ls -l '$codex_bin'  # to inspect the existing file" >&2
+    exit 13
+  fi
+
+  local cmd=(npm install -g "$target_spec")
+  (( npm_force )) && cmd+=(--force)
+  (( use_sudo )) && cmd=(sudo "${cmd[@]}")
+  echo "Running: ${cmd[*]}"
+  if (( dry_run )); then
+    echo "(dry-run) Skipping execution."
+  else
+    if ! output=$("${cmd[@]}" 2>&1); then
+      echo "$output" >&2
+      if echo "$output" | grep -qi 'EEXIST'; then
+        echo "error: npm reported EEXIST (file exists) for the 'codex' binary." >&2
+        echo "fix: remove the existing file (e.g., 'sudo rm -f \"$codex_bin\"') or rerun with '--npm-force' to let npm overwrite." >&2
+        echo "note: you may also need '--sudo' if the prefix is in a protected directory." >&2
+      fi
+      exit 1
+    fi
+  fi
 
   if command -v codex >/dev/null 2>&1; then
     local new_version; new_version=$(get_current_version)

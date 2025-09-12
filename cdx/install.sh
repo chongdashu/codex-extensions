@@ -9,10 +9,19 @@ SELF_DIR=$(cd "$(dirname "$0")" && pwd)
 CDX_ENTRY="$SELF_DIR/cdx.sh"
 
 pick_shell_rc() {
+  # Prefer user's login shell, then existing files, then bashrc
+  local shell_name=""
+  if [[ -n "${SHELL:-}" ]]; then
+    shell_name=$(basename -- "$SHELL")
+  fi
+  case "$shell_name" in
+    zsh) echo "$HOME/.zshrc"; return ;;
+    bash) echo "$HOME/.bashrc"; return ;;
+  esac
   for f in "$HOME/.bashrc" "$HOME/.zshrc"; do
     [[ -f "$f" ]] && { echo "$f"; return; }
   done
-  # Default to bashrc if none exist
+  # Default to bashrc if none exist or shell is unknown
   echo "$HOME/.bashrc"
 }
 

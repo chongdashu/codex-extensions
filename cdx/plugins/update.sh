@@ -2,7 +2,7 @@
 set -euo pipefail
 
 print_usage() {
-  cat <<'EOF'
+  command cat <<'EOF'
 Update Codex CLI to the latest (or a specified tag/version).
 
 Usage:
@@ -73,4 +73,3 @@ main() {
 }
 
 main "$@"
-

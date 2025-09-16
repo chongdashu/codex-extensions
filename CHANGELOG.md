@@ -1,0 +1,22 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+This project adheres to semantic versioning. Dates are in YYYY-MM-DD.
+
+## [0.2.0] - 2025-09-16
+
+- fix: Prompt installer now searches correct locations in order of preference and respects `REPO_PROMPTS_DIR`.
+  - Looks in `repo_root/prompts`, then `cdx/prompts`, then a legacy vendored prompts path.
+  - Improves messages when no prompts are found.
+- fix: `cdx prompts` plugin resolves repo root more robustly and mirrors the same source directory priority.
+  - Adds upward walk to detect `.git`, `AGENTS.md`, or `README.md`.
+  - `cdx prompts path` reflects resolved source/dest paths.
+- fix: `cdx plugins` no longer requires ripgrep; falls back to `find` when `rg` is unavailable.
+- docs: Remove “vendored copies” wording and one‑liner; simplify Quick Start.
+- chore: Bump `cdx` version to `0.2.0` and update build date to `2025-09-16`.
+
+## [0.1.0] - 2025-09-11
+
+- Initial public release.
+- Adds `cdx` shell wrapper, plugin routing, prompts management, update check, and smoke test.

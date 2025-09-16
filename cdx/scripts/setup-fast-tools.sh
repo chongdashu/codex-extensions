@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 #
-# Usage: tools/cdx/scripts/setup-fast-tools.sh [--install-deps] [--dry-run] [--non-interactive]
+# Usage: cdx/scripts/setup-fast-tools.sh [--install-deps] [--dry-run] [--non-interactive]
 #
 # Purpose:
 # - Append the repo's fast-tools prompt to AGENTS.md (idempotent via watermark).
 # - Optionally install recommended CLI tools: ripgrep (rg), fd/fdfind, jq.
 #
 # Examples:
-#   ./tools/cdx/scripts/setup-fast-tools.sh                 # append prompt only
-#   ./tools/cdx/scripts/setup-fast-tools.sh --install-deps  # append + install deps
-#   ./tools/cdx/scripts/setup-fast-tools.sh --install-deps --dry-run
+#   bash cdx/scripts/setup-fast-tools.sh                 # append prompt only
+#   bash cdx/scripts/setup-fast-tools.sh --install-deps  # append + install deps
+#   bash cdx/scripts/setup-fast-tools.sh --install-deps --dry-run
 #
 set -euo pipefail
 
@@ -60,7 +60,14 @@ done
 # Find repo root (or stay in CWD if not a git repo)
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 AGENTS="$REPO_ROOT/AGENTS.md"
-PROMPT_SRC="$REPO_ROOT/tools/cdx/agents/fast-tools.md"
+# Determine prompt source (prefer cdx/agents, then agents)
+if [ -f "$REPO_ROOT/cdx/agents/fast-tools.md" ]; then
+  PROMPT_SRC="$REPO_ROOT/cdx/agents/fast-tools.md"
+elif [ -f "$REPO_ROOT/agents/fast-tools.md" ]; then
+  PROMPT_SRC="$REPO_ROOT/agents/fast-tools.md"
+else
+  PROMPT_SRC="$REPO_ROOT/cdx/agents/fast-tools.md" # final fallback for messaging
+fi
 
 if [ ! -f "$AGENTS" ]; then
   err "AGENTS.md not found under $REPO_ROOT"

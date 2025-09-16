@@ -7,7 +7,9 @@
 - `cdx/agents/fast-tools.md` — reusable prompt to append to this file.
 - `cdx/scripts/` — utility scripts (e.g., `setup-fast-tools.sh`).
 - `cdx/install.sh`, `cdx/smoke-test.sh` — installer and health check.
-Note: When embedding in another repo, `tools/cdx/**` is the recommended path. Set `REPO_PROMPTS_DIR` to override prompt source if layouts differ.
+Note: Prompt discovery checks `repo_root/prompts`, `cdx/prompts`, and a legacy vendored prompts path by default. Set `REPO_PROMPTS_DIR` to override the prompt source if your layout differs.
+
+Additional note: Plugin discovery uses `ripgrep` (`rg`) when available and falls back to `find` automatically. `rg` is recommended for speed but not required.
 
 ## Build, Test, and Development Commands
 - Load locally: `source cdx/cdx.sh && cdx help` (defines `cdx` in your shell).
@@ -39,4 +41,3 @@ Note: When embedding in another repo, `tools/cdx/**` is the recommended path. Se
 - Cap file reads at ~250 lines; prefer `rg -n -A3 -B3` for context.
 - Use `jq` for JSON parsing.
 - Append the fast-tools prompt (idempotent): `bash cdx/scripts/setup-fast-tools.sh [--install-deps]`.
-

@@ -4,11 +4,11 @@ Append the project’s fast-tools prompt to `AGENTS.md` without attempting to in
 
 What this does:
 
-- Detects `AGENTS.md` and `tools/cdx/agents/fast-tools.md` in the current repo.
+- Detects `AGENTS.md` and `cdx/agents/fast-tools.md` (or `agents/fast-tools.md`) in the current repo.
 - Checks for the `FAST-TOOLS PROMPT v1` watermark to avoid duplicates.
 - Appends the prompt if not already present.
 
-It does not install `ripgrep`, `fd`/`fdfind`, or `jq`. If you need those tools, install them separately using your OS package manager (see brief guidance inside `tools/cdx/agents/fast-tools.md`).
+It does not install `ripgrep`, `fd`/`fdfind`, or `jq`. If you need those tools, install them separately using your OS package manager (see brief guidance inside `cdx/agents/fast-tools.md`).
 
 Run this minimal, no-sudo snippet:
 
@@ -18,7 +18,14 @@ set -euo pipefail
 # Find repo root (or stay in CWD if not a git repo)
 repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 agents="$repo_root/AGENTS.md"
-prompt_src="$repo_root/tools/cdx/agents/fast-tools.md"
+if [ -f "$repo_root/cdx/agents/fast-tools.md" ]; then
+  prompt_src="$repo_root/cdx/agents/fast-tools.md"
+elif [ -f "$repo_root/agents/fast-tools.md" ]; then
+  prompt_src="$repo_root/agents/fast-tools.md"
+else
+  echo "Prompt file missing under cdx/agents or agents in $repo_root" >&2
+  exit 1
+fi
 
 if [ ! -f "$agents" ]; then
   echo "AGENTS.md not found under $repo_root" >&2
@@ -53,10 +60,10 @@ Tell the user to that they need to install dependencies / third party tools afte
 
 ```bash
 # Append prompt (idempotent)
-./tools/cdx/scripts/setup-fast-tools.sh
+bash cdx/scripts/setup-fast-tools.sh
 
 # Append and install ripgrep/fd/jq (best effort)
-./tools/cdx/scripts/setup-fast-tools.sh --install-deps
+bash cdx/scripts/setup-fast-tools.sh --install-deps
 ```
 
 Notes:

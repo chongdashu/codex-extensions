@@ -4,12 +4,46 @@ set -euo pipefail
 # Manage Codex custom prompts for this repository.
 
 script_dir() { local src; src=${BASH_SOURCE[0]}; cd "$(dirname "$src")" >/dev/null 2>&1 && pwd; }
-# From plugins/ -> repo root: ../../.. (plugins -> cdx -> tools -> repo)
-repo_root() { cd "$(script_dir)"/../../.. >/dev/null 2>&1 && pwd; }
+
+# Try to find repo root by walking up until a marker is found (.git/ or AGENTS.md or README.md).
+repo_root() {
+  local dir; dir=$(script_dir)
+  local max_up=6
+  while [[ "$dir" != "/" && $max_up -gt 0 ]]; do
+    if [[ -d "$dir/.git" || -f "$dir/AGENTS.md" || -f "$dir/README.md" ]]; then
+      echo "$dir"; return
+    fi
+    dir=$(dirname "$dir"); max_up=$((max_up-1))
+  done
+  # Fallbacks: two and three levels up from plugins/
+  if cd "$(script_dir)"/../.. >/dev/null 2>&1; then pwd; return; fi
+  cd "$(script_dir)"/../../.. >/dev/null 2>&1 && pwd
+}
 
 codex_home=${CODEX_HOME:-"$HOME/.codex"}
 dest_dir="$codex_home/prompts"
-src_dir_default="$(repo_root)/tools/cdx/prompts"
+
+# Resolve default source directory by probing common layouts in order of preference.
+resolve_src_dir() {
+  local rr; rr=$(repo_root)
+  local candidates=(
+    "${REPO_PROMPTS_DIR:-}"           # explicit override
+    "$rr/prompts"                      # repo-level prompts
+    "$(script_dir)/../prompts"         # cdx/prompts
+    "$rr/tools/cdx/prompts"            # legacy vendored layout
+  )
+  local d
+  for d in "${candidates[@]}"; do
+    [[ -n "$d" && -d "$d" ]] && { echo "$d"; return; }
+  done
+  # If nothing found, still return the first non-empty candidate for messaging
+  for d in "${candidates[@]}"; do
+    if [[ -n "$d" ]]; then echo "$d"; return; fi
+  done
+  echo "$rr/prompts"
+}
+
+src_dir_default="$(resolve_src_dir)"
 src_dir=${REPO_PROMPTS_DIR:-"$src_dir_default"}
 
 ensure_dirs() { mkdir -p "$dest_dir"; }

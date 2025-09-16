@@ -38,19 +38,63 @@ if [[ ! -f "$cfg" ]]; then
   exit 1
 fi
 
-# Extract [profiles.<name>] headers (quoted or bare); ignore subtables and trailing comments
-profiles=$(awk '
-match($0,/^[[:space:]]*\[profiles\.(.*)\][[:space:]]*(#.*)?$/,m){
-  s=m[1]
-  if (s ~ /^"/){sub(/^"/,"",s); sub(/".*/,"",s)} else {sub(/\..*/,"",s)}
-  print s
-}' "$cfg" | sort -u)
+profiles_raw=""
+current=""
+while IFS= read -r raw_line; do
+  local_line=${raw_line%$'\r'}
+  local_line=${local_line%%#*}
+  # trim leading whitespace
+  local_line="${local_line#${local_line%%[![:space:]]*}}"
+  # trim trailing whitespace
+  local_line="${local_line%${local_line##*[![:space:]]}}"
+  [[ -z "$local_line" ]] && continue
 
-# Determine active profile from top-level `profile = "..."` (single or double quotes)
-current=$(awk '
-match($0,/^[[:space:]]*profile[[:space:]]*=[[:space:]]*"([^"]+)"/,m){print m[1]; exit}
-match($0,/^[[:space:]]*profile[[:space:]]*=\s*'\''([^'\'']+)'\''/,m){print m[1]; exit}
-' "$cfg" 2>/dev/null || true)
+  if [[ ${local_line:0:1} == "[" ]]; then
+    case "$local_line" in
+      \[profiles.*\])
+        section=${local_line#\[profiles.}
+        section=${section%]}
+        name=$section
+        if [[ $section == \"* && $section == *\" ]]; then
+          name=${section#\"}
+          name=${name%\"}
+        elif [[ $section == \'* && $section == *\' ]]; then
+          name=${section#\'}
+          name=${name%\'}
+        else
+          name=${section%%.*}
+        fi
+        [[ -n "$name" ]] && profiles_raw+="$name"$'\n'
+        ;;
+    esac
+    continue
+  fi
+
+  if [[ -z "$current" && $local_line == profile* ]]; then
+    IFS='=' read -r key value <<<"$local_line"
+    key="${key%${key##*[![:space:]]}}"
+    key="${key#${key%%[![:space:]]*}}"
+    if [[ $key == profile ]]; then
+      value="${value#${value%%[![:space:]]*}}"
+      value="${value%${value##*[![:space:]]}}"
+      if [[ $value == \"* && $value == *\" ]]; then
+        current=${value#\"}
+        current=${current%\"}
+      elif [[ $value == \'* && $value == *\' ]]; then
+        current=${value#\'}
+        current=${current%\'}
+      else
+        current=$value
+      fi
+    fi
+  fi
+done < "$cfg"
+
+if [[ -n "$profiles_raw" ]]; then
+  profiles=$(printf '%s' "$profiles_raw" | sed '/^$/d' | sort -u)
+else
+  profiles=""
+fi
 
 if [[ $QUIET -eq 1 ]]; then
   if [[ -n "$profiles" ]]; then printf '%s\n' "$profiles"; fi

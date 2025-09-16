@@ -18,10 +18,15 @@ _cdx__detect_plugin_dir() {
   elif [[ -n "$ZSH_VERSION" ]]; then
     local src
     src=$(eval 'print -r -- ${(%):-%N}' 2>/dev/null) || true
-    [[ -n "$src" ]] && base=$(cd "$(dirname "$src")" 2>/dev/null && pwd || true)
+    if [[ -n "$src" ]]; then
+      [[ "$src" != /* ]] && src="$PWD/$src"
+      base=$(cd "$(dirname "$src")" 2>/dev/null && pwd || true)
+    fi
   fi
   if [[ -z "$base" ]]; then
-    base="$HOME/projects/codex-mastery/tools/cdx"
+    base="$HOME/.codex/cdx"
+  elif [[ ! -d "$base/plugins" && -d "$base/cdx/plugins" ]]; then
+    base="$base/cdx"
   fi
   printf '%s' "$base/plugins"
 }
@@ -30,8 +35,8 @@ _cdx__detect_plugin_dir() {
 # Configuration (overridable via env)   #
 #########################################
 : "${CODEX_BIN:=codex}"
-: "${CDX_VERSION:=0.1.0}"
-: "${CDX_BUILD_DATE:=2025-09-11}"
+: "${CDX_VERSION:=0.2.0}"
+: "${CDX_BUILD_DATE:=2025-09-16}"
 : "${CODEX_PLUGIN_DIR:=$(_cdx__detect_plugin_dir)}"
 : "${CDX_CHECK_UPDATES:=}"
 
@@ -50,7 +55,26 @@ _CDX_DEFAULT_FLAGS=(
 _cdx_list_plugins() {
   local plugin_dir="${CODEX_PLUGIN_DIR}"
   [[ -d "$plugin_dir" ]] || return 0
-  rg --files "$plugin_dir" 2>/dev/null | sed -nE 's#^.*/([^/]+)\.(sh|sg)$#\1#p' | sort -u
+  if command -v rg >/dev/null 2>&1; then
+    rg --files "$plugin_dir" 2>/dev/null | sed -nE 's#^.*/([^/]+)\.(sh|sg)$#\1#p' | sort -u
+  else
+    # Fallback when ripgrep is unavailable
+    find "$plugin_dir" -maxdepth 1 -type f \( -name '*.sh' -o -name '*.sg' \) -print 2>/dev/null \
+      | sed -nE 's#^.*/([^/]+)\.(sh|sg)$#\1#p' | sort -u
+  fi
+}
+
+_cdx_find_plugin_script() {
+  local plugin_dir="$1" name="$2" ext candidate
+  for ext in sh sg; do
+    for candidate in "$plugin_dir/$name.$ext" "$plugin_dir/codex-$name.$ext"; do
+      if [[ -f "$candidate" ]]; then
+        printf '%s' "$candidate"
+        return 0
+      fi
+    done
+  done
+  return 1
 }
 
 _cdx_plugins_cmd() {
@@ -71,17 +95,21 @@ _cdx_plugins_cmd() {
   printf 'Plugins (%s) in %s:\n' "$count" "$plugin_dir"
   while IFS= read -r name; do
     [[ -z "$name" ]] && continue
-    local path="$plugin_dir/codex-$name.sh"
-    printf '  - %s  (%s)\n' "$name" "$path"
+    local resolved
+    resolved=$(_cdx_find_plugin_script "$plugin_dir" "$name") || resolved="$plugin_dir/$name"
+    printf '  - %s  (%s)\n' "$name" "$resolved"
   done <<<"$list"
   printf 'Tip: run `cdx <plugin> --help` for plugin usage.\n'
 }
 
 _cdx_parse_bool() {
   # returns 0 (true) or 1 (false); empty -> 1
-  case "${1,,}" in
+  local raw="${1-}" val
+  val=$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]')
+  [[ -z "$val" ]] && return 1
+  case "$val" in
     1|true|yes|on) return 0;;
-    0|false|no|off|"") return 1;;
+    0|false|no|off) return 1;;
     *) return 1;;
   esac
 }
@@ -111,7 +139,9 @@ _cdx_maybe_check_updates() {
   # Run quiet by default (prints only when an update is available).
   # Accept CDX_CHECK_UPDATES=info|verbose|always to show status even when up-to-date.
   local flags=(--check-only)
-  case "${CDX_CHECK_UPDATES,,}" in
+  local mode
+  mode=$(printf '%s' "${CDX_CHECK_UPDATES:-}" | tr '[:upper:]' '[:lower:]')
+  case "$mode" in
     info|verbose|always|print|show) : ;; # no --quiet
     *) flags+=(--quiet) ;;
   esac
@@ -120,15 +150,20 @@ _cdx_maybe_check_updates() {
 
 _cdx_usage() {
   printf 'cdx %s (%s)\n\n' "$CDX_VERSION" "$CDX_BUILD_DATE"
+  local resume_plugin update_plugin prompts_plugin profiles_plugin
+  resume_plugin=$(_cdx_find_plugin_script "$CODEX_PLUGIN_DIR" "resume") || resume_plugin="$CODEX_PLUGIN_DIR/resume.sh"
+  update_plugin=$(_cdx_find_plugin_script "$CODEX_PLUGIN_DIR" "update") || update_plugin="$CODEX_PLUGIN_DIR/update.sh"
+  prompts_plugin=$(_cdx_find_plugin_script "$CODEX_PLUGIN_DIR" "prompts") || prompts_plugin="$CODEX_PLUGIN_DIR/prompts.sh"
+  profiles_plugin=$(_cdx_find_plugin_script "$CODEX_PLUGIN_DIR" "profiles") || profiles_plugin="$CODEX_PLUGIN_DIR/profiles.sh"
   cat <<EOF
 Usage:
   cdx [--] [codex-args...]
   cdx --version            -> print cdx version
-  cdx resume [args...]      -> ${CODEX_PLUGIN_DIR}/codex-resume.sh
-  cdx update [args...]      -> ${CODEX_PLUGIN_DIR}/codex-update.sh
-  cdx prompts [args...]     -> ${CODEX_PLUGIN_DIR}/prompts.sh
+  cdx resume [args...]      -> ${resume_plugin}
+  cdx update [args...]      -> ${update_plugin}
+  cdx prompts [args...]     -> ${prompts_plugin}
   cdx raw [codex-args...]   -> run codex with no defaults
-  cdx profiles [args...]    -> ${CODEX_PLUGIN_DIR}/profiles.sh
+  cdx profiles [args...]    -> ${profiles_plugin}
   cdx plugins               -> list discovered subcommands
   cdx help                  -> show this help
 
@@ -207,11 +242,7 @@ cdx() {
       *) ;;
     esac
     local candidate=""
-    for ext in sh sg; do
-      if [[ -f "$plugin_dir/$sub.$ext" ]]; then
-        candidate="$plugin_dir/$sub.$ext"; break
-      fi
-    done
+    candidate=$(_cdx_find_plugin_script "$plugin_dir" "$sub") || candidate=""
     if [[ -n "$candidate" ]]; then
       bash "$candidate" "$@"; return $?
     fi

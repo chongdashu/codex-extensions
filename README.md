@@ -4,7 +4,7 @@
 ![OS](https://img.shields.io/badge/OS-macOS%20%7C%20Linux-lightgrey)
 ![Type](https://img.shields.io/badge/Type-CLI%20Helpers-blue)
 
-Lightweight, POSIX‑friendly helpers that enhance the Codex CLI with a single entrypoint, plugin routing, prompt management, and a quick smoke test. Use directly or vendor under `tools/cdx/` in your own repo.
+Lightweight, POSIX‑friendly helpers that enhance the Codex CLI with a single entrypoint, plugin routing, prompt management, and a quick smoke test.
 
 ## Why cdx
 
@@ -28,11 +28,7 @@ As a worked through famliarising myself with the Codex CLI, I found that many of
   # Or for a temporary session
   source cdx/cdx.sh && cdx help
   ```
-- One‑liner (template for vendored copies):
-  ```bash
-  # Replace OWNER/REPO/BRANCH with your values
-  bash <(curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/BRANCH/tools/cdx/install.sh) --with-prompts
-  ```
+  
 
 ## Usage
 
@@ -68,22 +64,13 @@ cdx/
 - `cdx/scripts/` — utilities (e.g., `setup-fast-tools.sh`).
 - `cdx/smoke-test.sh` — non‑destructive health check.
 
-## Embed In Your Repo
-
-Vendor as `tools/cdx/**` and call the installer from your repo root:
-
-```bash
-bash tools/cdx/install.sh --with-prompts
-```
-
-If your prompts live elsewhere, set `REPO_PROMPTS_DIR=/path/to/prompts` before running `cdx prompts`.
-
-> Tip: Append the fast‑tools prompt to `AGENTS.md` with `bash cdx/scripts/setup-fast-tools.sh` (idempotent; add `--install-deps` to install rg/fd/jq).
+> Tip: Append the fast‑tools prompt to `AGENTS.md` with `bash cdx/scripts/setup-fast-tools.sh` (idempotent; add `--install-deps` to install rg/fd/jq). If your prompts live elsewhere, set `REPO_PROMPTS_DIR=/path/to/prompts` before running `cdx prompts`.
 
 ## Requirements & Troubleshooting
 
 - Bash 4+, macOS/Linux; Windows via WSL or Git Bash.
 - `npm` optional (only for `cdx update`). If `codex` is not on PATH after update, check `npm prefix -g` and your shell rc file.
+- `ripgrep` optional (faster plugin discovery). If missing, `cdx plugins` falls back to `find` automatically.
 
 ## Contributing
 

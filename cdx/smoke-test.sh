@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Smoke test for tools/cdx distribution. Safe to run anywhere.
+# Smoke test for cdx distribution. Safe to run anywhere.
 # - Does not modify files (except optional prompts path discovery)
 # - Handles missing npm/config gracefully
 
@@ -53,4 +53,3 @@ fi
 
 echo "---"
 echo "Smoke test completed. If all checks are green, you're good to go."
-

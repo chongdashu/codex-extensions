@@ -57,43 +57,51 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-# Find repo root (or stay in CWD if not a git repo)
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-AGENTS="$REPO_ROOT/AGENTS.md"
-# Determine prompt source (prefer cdx/agents, then agents)
-if [ -f "$REPO_ROOT/cdx/agents/fast-tools.md" ]; then
-  PROMPT_SRC="$REPO_ROOT/cdx/agents/fast-tools.md"
-elif [ -f "$REPO_ROOT/agents/fast-tools.md" ]; then
-  PROMPT_SRC="$REPO_ROOT/agents/fast-tools.md"
+# Operate from the current working directory so the prompt wires into the local AGENTS.md.
+CWD=$(pwd)
+AGENTS="$CWD/AGENTS.md"
+if [ -f "$CWD/cdx/agents/fast-tools.md" ]; then
+  PROMPT_SRC="$CWD/cdx/agents/fast-tools.md"
+elif [ -f "$CWD/agents/fast-tools.md" ]; then
+  PROMPT_SRC="$CWD/agents/fast-tools.md"
 else
-  PROMPT_SRC="$REPO_ROOT/cdx/agents/fast-tools.md" # final fallback for messaging
+  PROMPT_SRC="$CWD/cdx/agents/fast-tools.md"
 fi
 
-if [ ! -f "$AGENTS" ]; then
-  err "AGENTS.md not found under $REPO_ROOT"
-  exit 1
-fi
 if [ ! -f "$PROMPT_SRC" ]; then
   err "Prompt file missing: $PROMPT_SRC"
   exit 1
 fi
+
+if [ ! -f "$AGENTS" ]; then
+  log "AGENTS.md not found; creating $AGENTS"
+  run touch "$AGENTS"
+fi
+
+append_fast_tools_prompt() {
+  if [ "$DRY_RUN" -eq 1 ]; then
+    log "Dry run: would append fast-tools prompt to $AGENTS"
+    return 0
+  fi
+  if [ -s "$AGENTS" ]; then
+    printf "\n\n" >> "$AGENTS"
+  fi
+  cat "$PROMPT_SRC" >> "$AGENTS"
+  log "Appended fast-tools prompt to $AGENTS"
+}
 
 # Avoid duplicates using rg if available, otherwise grep
 if have rg; then
   if rg -q "FAST-TOOLS PROMPT v1" "$AGENTS"; then
     log "FAST-TOOLS prompt already present — skipping append."
   else
-    run printf "\n\n" >> "$AGENTS"
-    run cat "$PROMPT_SRC" >> "$AGENTS"
-    log "Appended fast-tools prompt to AGENTS.md"
+    append_fast_tools_prompt
   fi
 else
   if grep -q "FAST-TOOLS PROMPT v1" "$AGENTS"; then
     log "FAST-TOOLS prompt already present — skipping append."
   else
-    run printf "\n\n" >> "$AGENTS"
-    run cat "$PROMPT_SRC" >> "$AGENTS"
-    log "Appended fast-tools prompt to AGENTS.md"
+    append_fast_tools_prompt
   fi
 fi
 

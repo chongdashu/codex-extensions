@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to semantic versioning. Dates are in YYYY-MM-DD.
 
+## [0.2.1] - 2025-09-16
+
+- feat: Default `cdx` pass-through now targets `gpt-5-codex` and enables experimental reasoning summaries.
+- fix: `setup-fast-tools` now works from the current directory, creating `AGENTS.md` when missing and appending the fast-tools prompt without duplicate noise.
+- docs: Update `/setup-fast-tools`, README, and CHANGELOG to reflect the streamlined workflow.
+
 ## [0.2.0] - 2025-09-16
 
 - fix: Prompt installer now searches correct locations in order of preference and respects `REPO_PROMPTS_DIR`.

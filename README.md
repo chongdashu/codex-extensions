@@ -43,6 +43,8 @@ cdx -- --profile NAME     # pass through to codex with defaults
 cdx raw <args>            # run codex without defaults
 ```
 
+> Default pass-through now targets `gpt-5-codex` with `model_reasoning_effort="high"`, `model_reasoning_summary="auto"`, and `model_reasoning_summary_format="experimental"` while enabling `--search` and `--dangerously-bypass-approvals-and-sandbox`. Use `cdx raw` to skip these defaults.
+
 ## Repo at a Glance
 
 ```text
@@ -64,7 +66,7 @@ cdx/
 - `cdx/scripts/` — utilities (e.g., `setup-fast-tools.sh`).
 - `cdx/smoke-test.sh` — non‑destructive health check.
 
-> Tip: Append the fast‑tools prompt to `AGENTS.md` with `bash cdx/scripts/setup-fast-tools.sh` (idempotent; add `--install-deps` to install rg/fd/jq). If your prompts live elsewhere, set `REPO_PROMPTS_DIR=/path/to/prompts` before running `cdx prompts`.
+> Tip: Append the fast‑tools prompt to `AGENTS.md` with `bash cdx/scripts/setup-fast-tools.sh` (creates the file if missing; add `--install-deps` to install rg/fd/jq). If your prompts live elsewhere, set `REPO_PROMPTS_DIR=/path/to/prompts` before running `cdx prompts`.
 
 ## Requirements & Troubleshooting
 

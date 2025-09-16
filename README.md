@@ -24,7 +24,7 @@ As a worked through famliarising myself with the Codex CLI, I found that many of
 - From this repo (local install):
   ```bash
   # Add cdx to your shell
-  bash cdx/install.sh --with-prompts   # optional: copies prompts
+  bash cdx/install.sh           # installs prompts and adds shell sourcing
   # Or for a temporary session
   source cdx/cdx.sh && cdx help
   ```
@@ -51,9 +51,8 @@ cdx raw <args>            # run codex without defaults
 cdx/
   cdx.sh            # entrypoint defines `cdx` and alias `cx`
   plugins/          # profiles.sh, prompts.sh, update.sh, resume.sh
-  prompts/          # optional Markdown prompts
-  agents/           # reusable prompts (e.g., fast-tools.md)
-  scripts/          # setup-fast-tools.sh and utilities
+  prompts/          # optional Markdown prompts (fast-tools lives here)
+  scripts/          # utilities
   smoke-test.sh     # non-destructive health check
 ```
 
@@ -61,12 +60,11 @@ cdx/
 
 - `cdx/cdx.sh` — entrypoint defining the `cdx` function and `cx` alias.
 - `cdx/plugins/` — subcommands (`profiles.sh`, `prompts.sh`, `update.sh`, `resume.sh`).
-- `cdx/prompts/` — optional Markdown prompts for Codex.
-- `cdx/agents/fast-tools.md` — reusable prompt you can append to `AGENTS.md`.
-- `cdx/scripts/` — utilities (e.g., `setup-fast-tools.sh`).
+- `cdx/prompts/` — optional Markdown prompts for Codex (including `setup-fast-tools.md`).
+- `cdx/scripts/` — utilities.
 - `cdx/smoke-test.sh` — non‑destructive health check.
 
-> Tip: Append the fast‑tools prompt to `AGENTS.md` with `bash cdx/scripts/setup-fast-tools.sh` (creates the file if missing; add `--install-deps` to install rg/fd/jq). If your prompts live elsewhere, set `REPO_PROMPTS_DIR=/path/to/prompts` before running `cdx prompts`.
+> Tip: `cdx/prompts/setup-fast-tools.md` contains the fast-tools prompt. Copy that block into `AGENTS.md` if it is missing (the install script will drop prompts into `~/.codex/prompts`). If your prompts live elsewhere, set `REPO_PROMPTS_DIR=/path/to/prompts` before running `cdx prompts`.
 
 ## Requirements & Troubleshooting
 

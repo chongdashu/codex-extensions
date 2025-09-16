@@ -1,37 +1,36 @@
 # /setup-fast-tools
 
-Append the fast-tools prompt from `./cdx/agents/fast-tools.md` into `./AGENTS.md` for the current working directory whenever it is missing.
+Append the following prompt into `./AGENTS.md` for the current working directory whenever it is missing.
 
-```bash
-set -euo pipefail
+```
+<!-- FAST-TOOLS PROMPT v1 | codex-mastery | watermark:do-not-alter -->
 
-cwd=$(pwd)
-prompt_src="$cwd/cdx/agents/fast-tools.md"
-agents="$cwd/AGENTS.md"
+## CRITICAL: Use ripgrep, not grep
 
-if [ ! -f "$prompt_src" ]; then
-  echo "Missing $prompt_src" >&2
-  exit 1
-fi
+NEVER use grep for project-wide searches (slow, ignores .gitignore). ALWAYS use rg.
 
-if [ -f "$agents" ]; then
-  if command -v rg >/dev/null 2>&1; then
-    if rg -q "FAST-TOOLS PROMPT v1" "$agents"; then
-      echo "FAST-TOOLS prompt already present."
-      exit 0
-    fi
-  elif grep -q "FAST-TOOLS PROMPT v1" "$agents"; then
-    echo "FAST-TOOLS prompt already present."
-    exit 0
-  fi
-else
-  touch "$agents"
-fi
+- `rg "pattern"` — search content
+- `rg --files | rg "name"` — find files
+- `rg -t python "def"` — language filters
 
-if [ -s "$agents" ]; then
-  printf "\n\n" >> "$agents"
-fi
+## File finding
 
-cat "$prompt_src" >> "$agents"
-echo "Appended fast-tools prompt to $agents"
+- Prefer `fd` (or `fdfind` on Debian/Ubuntu). Respects .gitignore.
+
+## JSON
+
+- Use `jq` for parsing and transformations.
+
+## Install Guidance
+
+- macOS: `brew install ripgrep fd jq`
+- Debian/Ubuntu: `sudo apt update && sudo apt install -y ripgrep fd-find jq` (alias `fd=fdfind`)
+
+## Agent Instructions
+
+- Replace commands: grep→rg, find→rg --files/fd, ls -R→rg --files, cat|grep→rg pattern file
+- Cap reads at 250 lines; prefer `rg -n -A 3 -B 3` for context
+- Use `jq` for JSON instead of regex
+
+<!-- END FAST-TOOLS PROMPT v1 | codex-mastery -->
 ```

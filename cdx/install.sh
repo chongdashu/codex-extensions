@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Minimal installer for cdx as a standalone distribution.
 # - Adds a source line to your shell rc file
-# - Optionally installs repo prompts to ~/.codex/prompts
+# - Installs repo prompts to ~/.codex/prompts
 
 SELF_DIR=$(cd "$(dirname "$0")" && pwd)
 CDX_ENTRY="$SELF_DIR/cdx.sh"
@@ -102,10 +102,7 @@ main() {
   local rc
   rc=$(pick_shell_rc)
   ensure_source_line "$rc"
-  case "${1:-}" in
-    --with-prompts) install_prompts ;;
-    *) : ;;
-  esac
+  install_prompts
   echo "Done. Open a new shell or run: source $rc"
 }
 

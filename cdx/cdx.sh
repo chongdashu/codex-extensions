@@ -35,7 +35,7 @@ _cdx__detect_plugin_dir() {
 # Configuration (overridable via env)   #
 #########################################
 : "${CODEX_BIN:=codex}"
-: "${CDX_VERSION:=0.2.1}"
+: "${CDX_VERSION:=0.2.2}"
 : "${CDX_BUILD_DATE:=2025-09-16}"
 : "${CODEX_PLUGIN_DIR:=$(_cdx__detect_plugin_dir)}"
 : "${CDX_CHECK_UPDATES:=}"

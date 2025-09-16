@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to semantic versioning. Dates are in YYYY-MM-DD.
 
+## [0.2.2] - 2025-09-16
+
+- chore: Installer now always sources cdx and copies bundled prompts without needing `--with-prompts`.
+- docs: Refresh README and AGENTS instructions to match the simplified install flow.
+
 ## [0.2.1] - 2025-09-16
 
 - feat: Default `cdx` pass-through now targets `gpt-5-codex` and enables experimental reasoning summaries.

@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to semantic versioning. Dates are in YYYY-MM-DD.
 
+## [0.2.3] - 2025-09-29
+
+- fix: Re-run plugin directory detection each invocation so built-in subcommands work after env overrides.
+- fix: Warn once when falling back to bundled plugins, keeping misconfigurations visible without blocking usage.
+
 ## [0.2.2] - 2025-09-16
 
 - chore: Installer now always sources cdx and copies bundled prompts without needing `--with-prompts`.

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to semantic versioning. Dates are in YYYY-MM-DD.
 
+## [0.2.4] - 2025-10-04
+
+- fix: Fix zsh script path detection using `${(%):-%x}` instead of `${(%):-%N}` to correctly resolve plugin directory on shell restart.
+
 ## [0.2.3] - 2025-09-29
 
 - fix: Re-run plugin directory detection each invocation so built-in subcommands work after env overrides.

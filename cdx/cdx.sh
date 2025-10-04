@@ -16,10 +16,8 @@ _cdx__detect_plugin_dir() {
   if [[ -n "${BASH_SOURCE[0]}" ]]; then
     base=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
   elif [[ -n "$ZSH_VERSION" ]]; then
-    local src
-    src=$(eval 'print -r -- ${(%):-%N}' 2>/dev/null) || true
+    local src="${(%):-%x}"
     if [[ -n "$src" ]]; then
-      [[ "$src" != /* ]] && src="$PWD/$src"
       base=$(cd "$(dirname "$src")" 2>/dev/null && pwd || true)
     fi
   fi
@@ -87,8 +85,8 @@ readonly _CDX_DEFAULT_PLUGIN_DIR="$(_cdx__detect_plugin_dir)"
 # Configuration (overridable via env)   #
 #########################################
 : "${CODEX_BIN:=codex}"
-: "${CDX_VERSION:=0.2.3}"
-: "${CDX_BUILD_DATE:=2025-09-29}"
+: "${CDX_VERSION:=0.2.4}"
+: "${CDX_BUILD_DATE:=2025-10-04}"
 : "${CODEX_PLUGIN_DIR:=$_CDX_DEFAULT_PLUGIN_DIR}"
 : "${CDX_CHECK_UPDATES:=}"
 
